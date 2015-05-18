@@ -14,6 +14,7 @@ import lombok.SneakyThrows;
  */
 @RequiredArgsConstructor
 class BAnnotation implements InvocationHandler {
+    private final Class<? extends java.lang.annotation.Annotation> type;
     private final Factory factory;
     private final Annotation annotation;
 
@@ -22,12 +23,33 @@ class BAnnotation implements InvocationHandler {
     }
 
     @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    public Object invoke(Object proxy, Method method, Object[] args) {
         assert args.length == 0;
         MemberValue value = annotation.getMemberValue(method.getName());
         return value == null ?
                 method.getDefaultValue() :
                 factory.map(value, method.getReturnType());
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder(type.getSimpleName()).append('{');
+        for (int i = 0; i < type.getMethods().length; i++) {
+            if (i != 0) { builder.append(", "); }
+            Method method = type.getMethods()[i];
+            builder.append(method.getName()).append('=');
+            Object val = invoke(null, method, new Object[0]);
+            if (val.getClass().isArray()) {
+                builder.append(Arrays.toString((Object[]) val));
+            } else if (val instanceof String) {
+                builder.append('"').append(val).append('"');
+            } else if (val instanceof Class<?>) {
+                builder.append(((Class) val).getName());
+            } else {
+                builder.append(val);
+            }
+        }
+        return builder.append('}').toString();
     }
 
     private static class Factory {
@@ -63,7 +85,7 @@ class BAnnotation implements InvocationHandler {
 
         @SuppressWarnings("unchecked")
         <A extends java.lang.annotation.Annotation> A map(Annotation annotation, Class<A> type) {
-            return (A) Proxy.newProxyInstance(cl, new Class[]{ type }, new BAnnotation(this, annotation));
+            return (A) Proxy.newProxyInstance(cl, new Class[]{ type }, new BAnnotation(type, this, annotation));
         }
     }
 }

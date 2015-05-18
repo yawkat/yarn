@@ -29,4 +29,9 @@ class BAnnotationMirror extends BEntity implements AnnotationMirror {
     public Map<? extends ExecutableElement, ? extends AnnotationValue> getElementValues() {
         throw unsupported();
     }
+
+    @Override
+    public String toString() {
+        return annotation.toString();
+    }
 }

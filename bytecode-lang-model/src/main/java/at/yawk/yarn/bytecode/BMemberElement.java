@@ -11,10 +11,12 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.Name;
 import javax.lang.model.type.TypeMirror;
+import lombok.EqualsAndHashCode;
 
 /**
  * @author yawkat
  */
+@EqualsAndHashCode(of = "member", callSuper = false)
 abstract class BMemberElement<M extends CtMember> extends BElement {
     final M member;
 

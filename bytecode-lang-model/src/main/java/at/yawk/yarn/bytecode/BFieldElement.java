@@ -34,4 +34,9 @@ class BFieldElement extends BMemberElement<CtField> implements VariableElement {
                 fi.getAttribute(AnnotationsAttribute.visibleTag);
         return annotations(inv, vis);
     }
+
+    @Override
+    public String toString() {
+        return member.getName();
+    }
 }

@@ -15,6 +15,11 @@ class BNoType extends BTypeMirror implements NoType {
     }
 
     @Override
+    public String toString() {
+        return "<>";
+    }
+
+    @Override
     public TypeKind getKind() {
         return TypeKind.NONE;
     }

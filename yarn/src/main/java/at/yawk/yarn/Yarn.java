@@ -1,19 +1,19 @@
 package at.yawk.yarn;
 
 /**
- * Main yarn accessor class. Replaced at compile time.
- *
  * @author yawkat
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({ "unused", "unchecked" })
 public class Yarn {
     private Yarn() {}
 
-    public static Yarn build() {
-        throw new UnsupportedOperationException();
-    }
-
-    public <C> C getComponent(Class<C> type) {
-        throw new UnsupportedOperationException();
+    public static <E> E build(Class<E> entryPoint) {
+        String className = entryPoint.getName();
+        try {
+            Class<?> entryPointClass = entryPoint.getClassLoader().loadClass(className + "$YarnEntryPoint");
+            return (E) entryPointClass.newInstance();
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 }

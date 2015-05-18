@@ -69,4 +69,9 @@ class BParameterElement extends BElement implements VariableElement {
     public Object getConstantValue() {
         throw unsupported();
     }
+
+    @Override
+    public String toString() {
+        return type.toString();
+    }
 }

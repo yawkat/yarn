@@ -12,7 +12,7 @@ import javax.lang.model.element.Name;
 /**
  * @author yawkat
  */
-class BEntity {
+abstract class BEntity {
     final BytecodeContext context;
 
     BEntity(BytecodeContext context) {

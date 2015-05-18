@@ -8,11 +8,13 @@ import javassist.CtMethod;
 import javassist.bytecode.*;
 import javax.lang.model.element.*;
 import javax.lang.model.type.TypeMirror;
+import lombok.EqualsAndHashCode;
 import lombok.SneakyThrows;
 
 /**
  * @author yawkat
  */
+@EqualsAndHashCode(of = "clazz", callSuper = false)
 class BTypeElement extends BElement implements TypeElement {
     final TypeElement outer;
     final CtClass clazz;
@@ -164,5 +166,10 @@ class BTypeElement extends BElement implements TypeElement {
     @Override
     public <R, P> R accept(ElementVisitor<R, P> v, P p) {
         return v.visitType(this, p);
+    }
+
+    @Override
+    public String toString() {
+        return clazz.getName();
     }
 }

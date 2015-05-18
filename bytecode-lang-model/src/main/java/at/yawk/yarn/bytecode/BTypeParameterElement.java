@@ -71,4 +71,9 @@ class BTypeParameterElement extends BElement implements TypeParameterElement {
     public <R, P> R accept(ElementVisitor<R, P> v, P p) {
         return v.visitTypeParameter(this, p);
     }
+
+    @Override
+    public String toString() {
+        return typeParameter.toString();
+    }
 }

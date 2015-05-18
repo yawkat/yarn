@@ -107,4 +107,9 @@ class BSolidReferenceTypeMirror extends BTypeMirror
         }
         return Collections.emptyList();
     }
+
+    @Override
+    public String toString() {
+        return type.toString();
+    }
 }

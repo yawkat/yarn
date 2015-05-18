@@ -119,4 +119,9 @@ class BExecutableElement extends BMemberElement<CtBehavior> implements Executabl
                 mi.getAttribute(AnnotationsAttribute.visibleTag);
         return annotations(inv, vis);
     }
+
+    @Override
+    public String toString() {
+        return member.getName() + member.getMethodInfo2().getDescriptor();
+    }
 }

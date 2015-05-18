@@ -5,10 +5,12 @@ import java.util.List;
 import java.util.Set;
 import javax.lang.model.element.*;
 import javax.lang.model.type.TypeMirror;
+import lombok.EqualsAndHashCode;
 
 /**
  * @author yawkat
  */
+@EqualsAndHashCode(of = "name", callSuper = false)
 class BPackageElement extends BElement implements PackageElement {
     private final String name;
 
@@ -60,5 +62,10 @@ class BPackageElement extends BElement implements PackageElement {
     @Override
     public boolean isUnnamed() {
         return name.isEmpty();
+    }
+
+    @Override
+    public String toString() {
+        return name;
     }
 }

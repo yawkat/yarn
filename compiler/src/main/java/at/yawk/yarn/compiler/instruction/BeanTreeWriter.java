@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import javax.lang.model.element.*;
+import javax.lang.model.type.DeclaredType;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
@@ -92,14 +93,17 @@ public class BeanTreeWriter {
         TypeSpec.Builder type = TypeSpec.classBuilder(className.simpleName())
                 .addModifiers(Modifier.FINAL, Modifier.PUBLIC);
 
+        TypeName sup = TypeName.get(entryPoint.getDefinitionElement().asType());
+        System.out.println(((DeclaredType) entryPoint.getDefinitionElement().asType()).asElement()
+                                   .getEnclosingElement());
         if (entryPoint.getDefinitionElement().getKind() == ElementKind.INTERFACE) {
-            type.addSuperinterface(TypeName.get(entryPoint.getDefinitionElement().asType()));
+            type.addSuperinterface(sup);
         } else {
-            type.superclass(TypeName.get(entryPoint.getDefinitionElement().asType()));
+            type.superclass(sup);
         }
 
         MethodSpec.Builder constructor = MethodSpec.constructorBuilder()
-                .addModifiers(Modifier.PRIVATE);
+                .addModifiers(Modifier.PUBLIC);
 
         for (BeanDefinition bean : context.getSortedBeans()) {
             String id = bean.getId().toString();
@@ -120,13 +124,17 @@ public class BeanTreeWriter {
         }
 
         type.addMethod(constructor.build());
-        type.addMethod(
-                MethodSpec.methodBuilder("build")
-                        .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
-                        .returns(TypeName.get(entryPoint.getDefinitionElement().asType()))
-                        .addStatement("return new $L()", className)
-                        .build()
-        );
+
+        entryPoint.getGetters().forEach((mn, ref) -> {
+            MethodSpec.Builder builder = MethodSpec.methodBuilder(mn)
+                    .addAnnotation(Override.class)
+                    .returns(TypeName.get(ref.getType()))
+                    .addModifiers(Modifier.PUBLIC);
+            StatementBuilder statementBuilder = new StatementBuilder().append("return ");
+            ref.getResolver().write(new StatementContext(statementBuilder, context, "this", null, null));
+            statementBuilder.flush(builder);
+            type.addMethod(builder.build());
+        });
 
         write(JavaFile.builder(className.packageName(), type.build()).indent("  "));
     }
@@ -142,6 +150,6 @@ public class BeanTreeWriter {
     private static ClassName getGodClassName(EntryPoint entryPoint) {
         TypeElement definitionElement = entryPoint.getDefinitionElement();
         ClassName defName = ClassName.get(definitionElement);
-        return ClassName.get(defName.packageName(), defName.simpleName() + "$YarnEntryPoint");
+        return ClassName.get(defName.packageName(), String.join("$", defName.simpleNames()) + "$YarnEntryPoint");
     }
 }

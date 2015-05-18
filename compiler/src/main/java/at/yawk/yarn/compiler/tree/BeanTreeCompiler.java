@@ -13,6 +13,7 @@ import at.yawk.yarn.compiler.instruction.resolver.BeanResolver;
 import at.yawk.yarn.compiler.instruction.resolver.BeanResolverFactory;
 import at.yawk.yarn.compiler.process.definition.*;
 import at.yawk.yarn.compiler.process.entrypoint.ComponentScanner;
+import at.yawk.yarn.compiler.process.entrypoint.EntryPointGetterBuilder;
 import at.yawk.yarn.compiler.process.entrypoint.EntryPointIncludeExpander;
 import at.yawk.yarn.compiler.process.entrypoint.EntryPointProcessor;
 import at.yawk.yarn.compiler.process.reference.LookupBeanReferenceProcessor;
@@ -181,6 +182,7 @@ public class BeanTreeCompiler implements at.yawk.yarn.compiler.Compiler {
 
     private final List<EntryPointProcessor> entryPointProcessors = Arrays.asList(
             new ComponentScanner(),
+            new EntryPointGetterBuilder(),
             new EntryPointIncludeExpander()
     );
 

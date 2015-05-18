@@ -24,11 +24,21 @@ public class BytecodeContext {
     }
 
     public TypeElement findType(String name) {
-        return getType(findRawType(name));
+        return findType(new SignatureAttribute.ClassType(name));
     }
 
     public TypeElement findType(SignatureAttribute.Type type) {
-        return getType(findRawType(type));
+        CtClass rawType = findRawType(type);
+        TypeElement outer = null;
+        if (type instanceof SignatureAttribute.ClassType) {
+            String name = ((SignatureAttribute.ClassType) type).getName();
+            int packageEnd = name.lastIndexOf('.');
+            int outerEnd = name.lastIndexOf('$');
+            if (outerEnd != -1 && outerEnd > packageEnd) {
+                outer = findType(name.substring(0, outerEnd));
+            }
+        }
+        return new BTypeElement(this, outer, rawType);
     }
 
     @SneakyThrows
@@ -46,10 +56,6 @@ public class BytecodeContext {
         CtClass component = findRawType(((SignatureAttribute.ArrayType) type).getComponentType());
         // don't do this at home
         return classPool.get(component.getName() + "[]");
-    }
-
-    TypeElement getType(CtClass clazz) {
-        return new BTypeElement(this, null, clazz);
     }
 
     BSolidReferenceTypeMirror getTypeMirror(SignatureAttribute.Type type) {
