@@ -24,6 +24,11 @@
             <artifactId>bytecode-lang-model</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.3</version>
+        </dependency>
 
         <!-- MOJO stuff -->
 
@@ -43,6 +48,11 @@
             <artifactId>maven-core</artifactId>
             <version>3.3.3</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-archiver</artifactId>
+            <version>2.6</version>
         </dependency>
     </dependencies>
 
