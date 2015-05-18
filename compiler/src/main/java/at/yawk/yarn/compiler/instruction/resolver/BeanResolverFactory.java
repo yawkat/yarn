@@ -4,6 +4,7 @@ import at.yawk.yarn.compiler.LookupBeanReference;
 import javax.inject.Provider;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 
 /**
@@ -16,7 +17,7 @@ public class BeanResolverFactory {
 
     public static void assignBeanResolver(LookupBeanReference reference) {
         TypeMirror type = reference.getType();
-        if (type instanceof DeclaredType) {
+        if (type.getKind() == TypeKind.DECLARED) {
             DeclaredType declaredType = (DeclaredType) type;
             TypeElement typeElement = (TypeElement) declaredType.asElement();
 

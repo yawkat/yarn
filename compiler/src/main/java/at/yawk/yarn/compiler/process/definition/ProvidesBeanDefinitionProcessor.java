@@ -8,8 +8,10 @@ import at.yawk.yarn.compiler.Util;
 import at.yawk.yarn.compiler.instruction.factory.MethodBeanFactory;
 import at.yawk.yarn.compiler.instruction.resolver.SingletonBeanResolver;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 
 /**
  * @author yawkat
@@ -17,10 +19,10 @@ import javax.lang.model.type.DeclaredType;
 public class ProvidesBeanDefinitionProcessor implements BeanDefinitionProcessor {
     @Override
     public void process(Compiler compiler, BeanDefinition definition) {
-        if (definition.getType() instanceof DeclaredType) {
+        if (definition.getType().getKind() == TypeKind.DECLARED) {
             for (Element member : ((DeclaredType) definition.getType()).asElement().getEnclosedElements()) {
                 if (member.getAnnotation(Provides.class) == null) { continue; }
-                if (member instanceof ExecutableElement) {
+                if (member.getKind() == ElementKind.METHOD) {
                     ExecutableElement method = (ExecutableElement) member;
                     ExplicitBeanReference reference = new ExplicitBeanReference(definition, false);
 

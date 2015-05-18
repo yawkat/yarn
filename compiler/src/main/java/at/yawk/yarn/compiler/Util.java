@@ -7,6 +7,7 @@ import java.lang.reflect.Type;
 import java.util.*;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.AbstractElementVisitor8;
 
@@ -104,24 +105,24 @@ public class Util {
         List<Annotation> annotations = new ArrayList<>();
         Set<String> resolvedClasses = new HashSet<>();
         for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
-            String qname = ((TypeElement) mirror.getAnnotationType().asElement()).getQualifiedName().toString();
-            if (resolvedClasses.add(qname)) {
-                try {
+            try {
+                String qname = ((TypeElement) mirror.getAnnotationType().asElement()).getQualifiedName().toString();
+                if (resolvedClasses.add(qname)) {
                     Class annotationClass = Class.forName(qname);
                     annotations.add(element.getAnnotation(annotationClass));
-                } catch (ClassNotFoundException ignored) {}
-            }
+                }
+            } catch (Exception ignored) {}
         }
         return annotations;
     }
 
     public static boolean inherits(TypeMirror parent, TypeMirror child) {
-        return parent instanceof DeclaredType &&
+        return parent.getKind() == TypeKind.DECLARED &&
                inherits((TypeElement) ((DeclaredType) parent).asElement(), child);
     }
 
     private static boolean inherits(TypeElement parent, TypeMirror child) {
-        return child instanceof DeclaredType &&
+        return child.getKind() == TypeKind.DECLARED &&
                inherits(parent, (TypeElement) ((DeclaredType) child).asElement());
     }
 

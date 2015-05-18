@@ -12,11 +12,9 @@ import at.yawk.yarn.compiler.instruction.setup.InjectMethodSetupInstruction;
 import java.util.ArrayList;
 import java.util.List;
 import javax.inject.Inject;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.VariableElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 
 /**
  * @author yawkat
@@ -24,7 +22,7 @@ import javax.lang.model.type.DeclaredType;
 public class InjectMembersBeanDefinitionProcessor implements BeanDefinitionProcessor {
     @Override
     public void process(Compiler compiler, BeanDefinition definition) {
-        if (!(definition.getType() instanceof DeclaredType)) { return; }
+        if (!(definition.getType().getKind() == TypeKind.DECLARED)) { return; }
         Element element = ((DeclaredType) definition.getType()).asElement();
         for (Element member : element.getEnclosedElements()) {
             // check for @Inject
@@ -32,7 +30,7 @@ public class InjectMembersBeanDefinitionProcessor implements BeanDefinitionProce
             if (member.getModifiers().contains(Modifier.STATIC)) {
                 throw new StaticMemberException("Cannot inject static member " + member);
             }
-            if (member instanceof VariableElement) {
+            if (member.getKind() == ElementKind.FIELD) {
                 LookupBeanReference reference = new LookupBeanReference();
                 reference.setType(member.asType());
                 reference.setAnnotations(Util.getAnnotations(element));
@@ -45,7 +43,7 @@ public class InjectMembersBeanDefinitionProcessor implements BeanDefinitionProce
                         reference.getResolver()
                 ));
 
-            } else if (member instanceof ExecutableElement) {
+            } else if (member.getKind() == ElementKind.METHOD) {
                 List<BeanResolver> resolvers = new ArrayList<>();
                 for (VariableElement parameter : ((ExecutableElement) member).getParameters()) {
                     LookupBeanReference reference = new LookupBeanReference();

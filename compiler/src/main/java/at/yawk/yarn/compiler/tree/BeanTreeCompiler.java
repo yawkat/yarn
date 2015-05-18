@@ -1,5 +1,6 @@
 package at.yawk.yarn.compiler.tree;
 
+import at.yawk.yarn.Component;
 import at.yawk.yarn.compiler.BeanDefinition;
 import at.yawk.yarn.compiler.LookupBeanReference;
 import at.yawk.yarn.compiler.Util;
@@ -15,10 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import javax.inject.Inject;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 
 /**
@@ -27,12 +25,31 @@ import javax.lang.model.type.DeclaredType;
 public class BeanTreeCompiler implements at.yawk.yarn.compiler.Compiler {
     private final BeanTree tree = new BeanTree();
 
-    public void scanAndAddEntryPoint(TypeElement entryPoint) {
+    @SuppressWarnings("Convert2streamapi")
+    public void scan(TypeElement element) {
+        if (element.getAnnotation(Component.class) != null) {
+            addComponent(element);
+        }
+        for (Element enclosed : element.getEnclosedElements()) {
+            if (enclosed.getKind() == ElementKind.CLASS ||
+                enclosed.getKind() == ElementKind.INTERFACE ||
+                enclosed.getKind() == ElementKind.ENUM ||
+                enclosed.getKind() == ElementKind.ANNOTATION_TYPE) {
+                scan((TypeElement) enclosed);
+            }
+        }
+    }
+
+    public void addComponent(TypeElement entryPoint) {
+        boolean anyConstructorPresent = false;
         ExecutableElement noArgsConstructor = null;
         ExecutableElement injectConstructor = null;
+
         for (Element element : entryPoint.getEnclosedElements()) {
             if (element instanceof ExecutableElement &&
                 element.getSimpleName().contentEquals("<init>")) {
+                anyConstructorPresent = true;
+
                 if (element.getAnnotation(Inject.class) != null) {
                     if (injectConstructor != null) {
                         throw new AmbiguousConstructorException(
@@ -49,17 +66,26 @@ public class BeanTreeCompiler implements at.yawk.yarn.compiler.Compiler {
             }
         }
 
-        if (noArgsConstructor == null && injectConstructor == null) {
-            throw new ConstructorNotFoundException(
-                    "Found no usable constructor on " + entryPoint.getQualifiedName() +
-                    ". Either add an empty constructor or annotated one with @Inject."
-            );
+        ExecutableElement constructor;
+        if (anyConstructorPresent) {
+            // prefer the @Inject constructor over the no-args one
+            constructor = injectConstructor == null ? noArgsConstructor : injectConstructor;
+
+            if (constructor == null) {
+                throw new ConstructorNotFoundException(
+                        "Found no usable constructor on " + entryPoint.getQualifiedName() +
+                        ". Either add an empty constructor or annotated one with @Inject."
+                );
+            }
+
+            // confirm we can access it
+            Util.checkAccess(constructor);
+
+        } else {
+            // this can happen when using java-types for reflection element mirrors, just assume there's a public
+            // empty constructor available
+            constructor = null;
         }
-
-        ExecutableElement constructorToUse =
-                injectConstructor == null ? noArgsConstructor : injectConstructor;
-
-        Util.checkAccess(constructorToUse);
 
         BeanDefinition definition = new BeanDefinition();
         definition.setAccessType((DeclaredType) entryPoint.asType());
@@ -68,18 +94,19 @@ public class BeanTreeCompiler implements at.yawk.yarn.compiler.Compiler {
         definition.setAnnotations(Util.getAnnotations(entryPoint));
 
         List<BeanResolver> arguments = new ArrayList<>();
-        for (VariableElement parameter : constructorToUse.getParameters()) {
-            LookupBeanReference reference = new LookupBeanReference();
-            reference.setType(parameter.asType());
-            reference.setAnnotations(Util.getAnnotations(parameter));
-            processLookupBeanReference(reference);
+        if (constructor != null) {
+            for (VariableElement parameter : constructor.getParameters()) {
+                LookupBeanReference reference = new LookupBeanReference();
+                reference.setType(parameter.asType());
+                reference.setAnnotations(Util.getAnnotations(parameter));
+                processLookupBeanReference(reference);
 
-            arguments.add(reference.getResolver());
-            definition.getDependencies().add(reference);
+                arguments.add(reference.getResolver());
+                definition.getDependencies().add(reference);
+            }
         }
 
         definition.setFactory(new ConstructorBeanFactory(arguments));
-        definition.setEntryPoint(true);
 
         register(definition);
     }
@@ -100,6 +127,7 @@ public class BeanTreeCompiler implements at.yawk.yarn.compiler.Compiler {
 
     ///// PROCESSORS /////
 
+    @SuppressWarnings("ArraysAsListWithZeroOrOneArgument")
     private final List<LookupBeanReferenceProcessor> referenceProcessors = Arrays.asList(
             new NamedAnnotationLookupBeanReferenceProcessor()
     );
