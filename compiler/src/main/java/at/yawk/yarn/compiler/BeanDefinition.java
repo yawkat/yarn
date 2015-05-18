@@ -29,8 +29,6 @@ public class BeanDefinition {
     private TypeMirror type;
     private List<Annotation> annotations;
 
-    private boolean entryPoint = false;
-
     private BeanFactory factory;
     /**
      * Instructions to run on this bean after construction
@@ -40,6 +38,8 @@ public class BeanDefinition {
     private Set<BeanReference> dependencies = new HashSet<>();
 
     private Set<BeanDefinition> providingDefinitions = new HashSet<>();
+
+    private boolean component = false;
 
     @Override
     public String toString() {

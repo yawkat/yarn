@@ -1,7 +1,9 @@
 package at.yawk.yarn.compiler.tree;
 
 import at.yawk.yarn.Component;
+import at.yawk.yarn.ComponentScan;
 import at.yawk.yarn.compiler.BeanDefinition;
+import at.yawk.yarn.compiler.EntryPoint;
 import at.yawk.yarn.compiler.LookupBeanReference;
 import at.yawk.yarn.compiler.Util;
 import at.yawk.yarn.compiler.error.AmbiguousConstructorException;
@@ -10,11 +12,13 @@ import at.yawk.yarn.compiler.instruction.factory.ConstructorBeanFactory;
 import at.yawk.yarn.compiler.instruction.resolver.BeanResolver;
 import at.yawk.yarn.compiler.instruction.resolver.BeanResolverFactory;
 import at.yawk.yarn.compiler.process.definition.*;
+import at.yawk.yarn.compiler.process.entrypoint.ComponentScanner;
+import at.yawk.yarn.compiler.process.entrypoint.EntryPointIncludeExpander;
+import at.yawk.yarn.compiler.process.entrypoint.EntryPointProcessor;
 import at.yawk.yarn.compiler.process.reference.LookupBeanReferenceProcessor;
 import at.yawk.yarn.compiler.process.reference.NamedAnnotationLookupBeanReferenceProcessor;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.lang.annotation.Annotation;
+import java.util.*;
 import javax.inject.Inject;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
@@ -23,12 +27,29 @@ import javax.lang.model.type.DeclaredType;
  * @author yawkat
  */
 public class BeanTreeCompiler implements at.yawk.yarn.compiler.Compiler {
-    private final BeanTree tree = new BeanTree();
+    private static final Set<Class<? extends Annotation>> ENTRYPOINT_MARKER_ANNOTATIONS = new HashSet<>(Arrays.asList(
+            at.yawk.yarn.EntryPoint.class,
+            ComponentScan.class
+    ));
+
+    private final BeanPool pool = new BeanPool();
 
     @SuppressWarnings("Convert2streamapi")
     public void scan(TypeElement element) {
         if (element.getAnnotation(Component.class) != null) {
             addComponent(element);
+        }
+        boolean isEntryPoint = false;
+        for (Class<? extends Annotation> markerAnnotation : ENTRYPOINT_MARKER_ANNOTATIONS) {
+            if (element.getAnnotationsByType(markerAnnotation).length != 0) {
+                isEntryPoint = true;
+                break;
+            }
+        }
+        if (isEntryPoint) {
+            EntryPoint entryPoint = new EntryPoint();
+            entryPoint.setDefinitionElement(element);
+            pool.getEntryPoints().put(entryPoint, new ContextBeanTree());
         }
         for (Element enclosed : element.getEnclosedElements()) {
             if (enclosed.getKind() == ElementKind.CLASS ||
@@ -92,6 +113,7 @@ public class BeanTreeCompiler implements at.yawk.yarn.compiler.Compiler {
         definition.setImplicitName(Util.decapitalize(entryPoint.getSimpleName().toString()));
         definition.setType(entryPoint.asType());
         definition.setAnnotations(Util.getAnnotations(entryPoint));
+        definition.setComponent(true);
 
         List<BeanResolver> arguments = new ArrayList<>();
         if (constructor != null) {
@@ -113,16 +135,20 @@ public class BeanTreeCompiler implements at.yawk.yarn.compiler.Compiler {
 
     private void register(BeanDefinition definition) {
         processBeanDefinition(definition);
-        tree.getBeanDefinitions().add(definition);
+        pool.getBeanDefinitions().add(definition);
 
         definition.getProvidingDefinitions().forEach(this::register);
     }
 
-    public BeanTree finishTree() {
-        tree.lookupReferences();
-        tree.sort();
-        tree.assignIds();
-        return tree;
+    public BeanPool finishTree() {
+        pool.assignIds();
+        pool.getEntryPoints().forEach((ep, ctx) -> {
+            processEntryPoint(ep);
+            ctx.setIncludedBeans(ep.getIncludedBeans());
+            ctx.lookupReferences();
+            ctx.sort();
+        });
+        return pool;
     }
 
     ///// PROCESSORS /////
@@ -150,6 +176,17 @@ public class BeanTreeCompiler implements at.yawk.yarn.compiler.Compiler {
     void processBeanDefinition(BeanDefinition definition) {
         for (BeanDefinitionProcessor processor : definitionProcessors) {
             processor.process(this, definition);
+        }
+    }
+
+    private final List<EntryPointProcessor> entryPointProcessors = Arrays.asList(
+            new ComponentScanner(),
+            new EntryPointIncludeExpander()
+    );
+
+    void processEntryPoint(EntryPoint entryPoint) {
+        for (EntryPointProcessor processor : entryPointProcessors) {
+            processor.process(this, entryPoint, pool);
         }
     }
 }

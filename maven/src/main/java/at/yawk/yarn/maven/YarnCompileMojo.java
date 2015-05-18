@@ -2,29 +2,23 @@ package at.yawk.yarn.maven;
 
 import at.yawk.yarn.bytecode.BytecodeContext;
 import at.yawk.yarn.compiler.instruction.BeanTreeWriter;
-import at.yawk.yarn.compiler.tree.BeanTree;
+import at.yawk.yarn.compiler.tree.BeanPool;
 import at.yawk.yarn.compiler.tree.BeanTreeCompiler;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import javassist.ClassPool;
 import javassist.NotFoundException;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.compiler.AbstractCompilerMojo;
 import org.apache.maven.plugin.compiler.CompilationFailureException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.archiver.Archiver;
-import org.codehaus.plexus.archiver.jar.JarArchiver;
 import org.codehaus.plexus.compiler.util.scan.SimpleSourceInclusionScanner;
 import org.codehaus.plexus.compiler.util.scan.SourceInclusionScanner;
 
@@ -53,8 +47,7 @@ public class YarnCompileMojo extends AbstractCompilerMojo {
         BeanTreeCompiler compiler = new BeanTreeCompiler();
 
         // Collect all class names we know
-        List<String> classNames = new ArrayList<>();
-        classNames.addAll(collectClassNames(Paths.get(project.getBuild().getOutputDirectory())));
+        Set<String> classNames = new HashSet<>();
         for (String cp : getClasspathElements()) {
             Path location = Paths.get(cp);
             if (Files.isRegularFile(location)) {
@@ -80,7 +73,7 @@ public class YarnCompileMojo extends AbstractCompilerMojo {
         }
 
         // generate code
-        BeanTree tree = compiler.finishTree();
+        BeanPool tree = compiler.finishTree();
         Path generationFolder = getSourceRoot();
         BeanTreeWriter.write(tree, generationFolder);
     }

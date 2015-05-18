@@ -17,7 +17,7 @@ import lombok.SneakyThrows;
  */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class BytecodeContext {
-    private final ClassPool classPool;
+    final ClassPool classPool;
 
     public static BytecodeContext of(ClassPool classPool) {
         return new BytecodeContext(classPool);

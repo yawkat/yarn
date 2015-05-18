@@ -2,9 +2,9 @@ package at.yawk.yarn.bytecode;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.List;
-import javassist.ClassPool;
 import javax.lang.model.AnnotatedConstruct;
 import lombok.SneakyThrows;
 
@@ -25,7 +25,7 @@ abstract class BAnnotatedConstruct extends BEntity implements AnnotatedConstruct
     public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
         for (BAnnotationMirror mirror : getAnnotationMirrors()) {
             if (mirror.annotation.getTypeName().equals(annotationType.getName())) {
-                return (A) mirror.annotation.toAnnotationType(annotationType.getClassLoader(), ClassPool.getDefault());
+                return BAnnotation.map(mirror.annotation, annotationType);
             }
         }
         return null;
@@ -36,7 +36,11 @@ abstract class BAnnotatedConstruct extends BEntity implements AnnotatedConstruct
     @SneakyThrows
     public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType) {
         A single = getAnnotation(annotationType);
-        if (single != null) { return (A[]) new Annotation[]{ single }; }
+        if (single != null) {
+            A[] array = (A[]) Array.newInstance(annotationType, 1);
+            array[0] = single;
+            return array;
+        }
         Repeatable repeatable = annotationType.getAnnotation(Repeatable.class);
         if (repeatable != null) {
             Class<? extends Annotation> repeating = repeatable.value();
@@ -47,6 +51,6 @@ abstract class BAnnotatedConstruct extends BEntity implements AnnotatedConstruct
                 return (A[]) valueMethod.invoke(repeatingFound);
             }
         }
-        return null;
+        return (A[]) Array.newInstance(annotationType, 0);
     }
 }

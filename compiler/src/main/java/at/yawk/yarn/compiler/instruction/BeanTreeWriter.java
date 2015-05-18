@@ -1,16 +1,16 @@
 package at.yawk.yarn.compiler.instruction;
 
-import at.yawk.yarn.Yarn;
 import at.yawk.yarn.compiler.BeanDefinition;
+import at.yawk.yarn.compiler.EntryPoint;
 import at.yawk.yarn.compiler.instruction.setup.SetupInstruction;
-import at.yawk.yarn.compiler.tree.BeanTree;
+import at.yawk.yarn.compiler.tree.BeanPool;
+import at.yawk.yarn.compiler.tree.ContextBeanTree;
 import com.squareup.javapoet.*;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
@@ -19,16 +19,14 @@ import lombok.RequiredArgsConstructor;
  */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class BeanTreeWriter {
-    private static final String YARN_FACTORY_NAME = "_yarn_factory";
-    private static final String YARN_PACKAGE = Yarn.class.getPackage().getName();
-    private static final String YARN_CLASS_NAME = Yarn.class.getSimpleName();
+    private static final String YARN_FACTORY_NAME = "$YarnFactory";
 
-    private final BeanTree tree;
+    private final BeanPool tree;
     private final Path folder;
 
     private final Map<String, TypeSpec.Builder> factoryClasses = new HashMap<>();
 
-    public static void write(BeanTree tree, Path outputFolder) throws IOException {
+    public static void write(BeanPool tree, Path outputFolder) throws IOException {
         new BeanTreeWriter(tree, outputFolder).write();
     }
 
@@ -38,20 +36,20 @@ public class BeanTreeWriter {
     }
 
     private void write() throws IOException {
-        writeFactories();
-        writeGod();
-    }
-
-    private void writeFactories() throws IOException {
-        for (BeanDefinition bean : tree.getSortedBeans()) {
-            writeFactory(bean);
+        for (Map.Entry<EntryPoint, ContextBeanTree> entry : tree.getEntryPoints().entrySet()) {
+            EntryPoint entryPoint = entry.getKey();
+            ContextBeanTree context = entry.getValue();
+            for (BeanDefinition bean : context.getSortedBeans()) {
+                writeFactory(entryPoint, context, bean);
+            }
+            writeGod(entryPoint, context);
         }
         for (Map.Entry<String, TypeSpec.Builder> entry : factoryClasses.entrySet()) {
             write(JavaFile.builder(entry.getKey(), entry.getValue().build()));
         }
     }
 
-    private void writeFactory(BeanDefinition bean) {
+    private void writeFactory(EntryPoint entryPoint, ContextBeanTree context, BeanDefinition bean) {
         String packageName = getAccessPackage(bean);
 
         TypeSpec.Builder factoryBuilder = factoryClasses.computeIfAbsent(
@@ -65,13 +63,14 @@ public class BeanTreeWriter {
                         )
         );
 
+        ClassName godClassName = getGodClassName(entryPoint);
         MethodSpec.Builder factoryMethodBuilder = MethodSpec.methodBuilder(bean.getId().toString())
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .addParameter(Yarn.class, "yarn")
+                .addParameter(godClassName, "yarn")
                 .returns(TypeName.get(bean.getType()));
 
         StatementBuilder builder = new StatementBuilder();
-        StatementContext ctx = new StatementContext(builder, tree, "yarn", bean.getType(), "instance");
+        StatementContext ctx = new StatementContext(builder, context, "yarn", bean.getType(), "instance");
 
         // constructor
         builder.append("$T instance = ", bean.getType());
@@ -88,28 +87,21 @@ public class BeanTreeWriter {
         factoryBuilder.addMethod(factoryMethodBuilder.build());
     }
 
-    private static String getAccessPackage(BeanDefinition bean) {
-        String qname = ((TypeElement) bean.getAccessType().asElement()).getQualifiedName().toString();
-        int classNameIndex = qname.lastIndexOf('.');
-        return classNameIndex == -1 ? "" : qname.substring(0, classNameIndex);
-    }
-
-    private void writeGod() throws IOException {
-        TypeSpec.Builder type = TypeSpec.classBuilder(YARN_CLASS_NAME)
+    private void writeGod(EntryPoint entryPoint, ContextBeanTree context) throws IOException {
+        ClassName className = getGodClassName(entryPoint);
+        TypeSpec.Builder type = TypeSpec.classBuilder(className.simpleName())
                 .addModifiers(Modifier.FINAL, Modifier.PUBLIC);
+
+        if (entryPoint.getDefinitionElement().getKind() == ElementKind.INTERFACE) {
+            type.addSuperinterface(TypeName.get(entryPoint.getDefinitionElement().asType()));
+        } else {
+            type.superclass(TypeName.get(entryPoint.getDefinitionElement().asType()));
+        }
 
         MethodSpec.Builder constructor = MethodSpec.constructorBuilder()
                 .addModifiers(Modifier.PRIVATE);
 
-        ParameterizedTypeName entryPointMapType = ParameterizedTypeName.get(HashMap.class, Class.class, Object.class);
-        FieldSpec entryPointMap = FieldSpec.builder(
-                entryPointMapType,
-                "entryPoints",
-                Modifier.PRIVATE, Modifier.FINAL
-        ).initializer("new $T()", entryPointMapType).build();
-        type.addField(entryPointMap);
-
-        for (BeanDefinition bean : tree.getSortedBeans()) {
+        for (BeanDefinition bean : context.getSortedBeans()) {
             String id = bean.getId().toString();
 
             FieldSpec field = FieldSpec.builder(
@@ -125,21 +117,31 @@ public class BeanTreeWriter {
                     "$N = $T.$L(this)",
                     field, ClassName.get(getAccessPackage(bean), YARN_FACTORY_NAME), id
             );
-
-            if (bean.isEntryPoint()) {
-                constructor.addStatement("$N.put($T.class, $N)", entryPointMap, bean.getType(), field);
-            }
         }
 
         type.addMethod(constructor.build());
         type.addMethod(
                 MethodSpec.methodBuilder("build")
                         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
-                        .returns(Yarn.class)
-                        .addStatement("return new $L()", YARN_CLASS_NAME)
+                        .returns(TypeName.get(entryPoint.getDefinitionElement().asType()))
+                        .addStatement("return new $L()", className)
                         .build()
         );
 
-        write(JavaFile.builder(YARN_PACKAGE, type.build()).indent("  "));
+        write(JavaFile.builder(className.packageName(), type.build()).indent("  "));
+    }
+
+    private static String getAccessPackage(BeanDefinition bean) {
+        Element element = bean.getAccessType().asElement();
+        while (element.getKind() != ElementKind.PACKAGE) {
+            element = element.getEnclosingElement();
+        }
+        return ((PackageElement) element).getQualifiedName().toString();
+    }
+
+    private static ClassName getGodClassName(EntryPoint entryPoint) {
+        TypeElement definitionElement = entryPoint.getDefinitionElement();
+        ClassName defName = ClassName.get(definitionElement);
+        return ClassName.get(defName.packageName(), defName.simpleName() + "$YarnEntryPoint");
     }
 }
