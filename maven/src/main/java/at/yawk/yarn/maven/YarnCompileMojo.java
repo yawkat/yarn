@@ -11,24 +11,29 @@ import java.nio.file.*;
 import java.util.*;
 import javassist.ClassPool;
 import javassist.NotFoundException;
-import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.compiler.AbstractCompilerMojo;
 import org.apache.maven.plugin.compiler.CompilationFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.MavenProject;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.codehaus.plexus.compiler.util.scan.SimpleSourceInclusionScanner;
 import org.codehaus.plexus.compiler.util.scan.SourceInclusionScanner;
 
 /**
  * @author yawkat
  */
-@Mojo(name = "compile", defaultPhase = LifecyclePhase.COMPILE)
+@Mojo(name = "compile", defaultPhase = LifecyclePhase.COMPILE, requiresDependencyResolution = ResolutionScope.COMPILE)
 public class YarnCompileMojo extends AbstractCompilerMojo {
-    @Parameter(defaultValue = "${project}")
-    MavenProject project;
+    @Parameter(defaultValue = "${project.build.directory}")
+    String buildDirectory;
+
+    @Parameter(defaultValue = "${project.build.outputDirectory}")
+    String outputDirectory;
+
+    @Parameter(defaultValue = "${project.compileClasspathElements}")
+    List<String> classpath;
 
     @Override
     public void execute() throws MojoExecutionException, CompilationFailureException {
@@ -79,12 +84,12 @@ public class YarnCompileMojo extends AbstractCompilerMojo {
     }
 
     private Path getSourceRoot() {
-        return Paths.get(project.getBuild().getDirectory(), "generated-sources", "yarn");
+        return Paths.get(buildDirectory, "generated-sources", "yarn");
     }
 
     private Path getClassRoot() {
         // todo use generated-classes and register with jar plugin
-        return Paths.get(project.getBuild().getOutputDirectory());
+        return Paths.get(outputDirectory);
     }
 
     @SuppressWarnings("Convert2streamapi")
@@ -126,11 +131,7 @@ public class YarnCompileMojo extends AbstractCompilerMojo {
 
     @Override
     protected List<String> getClasspathElements() {
-        try {
-            return project.getCompileClasspathElements();
-        } catch (DependencyResolutionRequiredException e) {
-            throw new RuntimeException(e);
-        }
+        return classpath;
     }
 
     @Override
