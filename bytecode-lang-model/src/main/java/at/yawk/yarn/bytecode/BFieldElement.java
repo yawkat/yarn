@@ -51,7 +51,6 @@ class BFieldElement extends BMemberElement<CtField> implements VariableElement {
         String signature = attribute == null ?
                 member.getFieldInfo().getDescriptor() :
                 attribute.getSignature();
-        System.out.println("ParC f " + signature);
         return context.getTypeMirror(SignatureAttribute.toFieldSignature(signature));
     }
 }

@@ -101,7 +101,6 @@ class BTypeElement extends BElement implements TypeElement {
         if (attribute == null) {
             return context.getTypeMirror(base);
         }
-        System.out.println("ParC t " + attribute.getSignature());
         SignatureAttribute.ClassSignature cs =
                 SignatureAttribute.toClassSignature(attribute.getSignature());
         if (base instanceof SignatureAttribute.NestedClassType) {

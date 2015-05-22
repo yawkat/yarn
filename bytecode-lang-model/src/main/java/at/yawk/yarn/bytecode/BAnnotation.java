@@ -7,7 +7,6 @@ import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import javassist.bytecode.annotation.*;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 
 /**
  * @author yawkat
@@ -55,12 +54,11 @@ class BAnnotation implements InvocationHandler {
     private static class Factory {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
 
-        @SneakyThrows
         private Object map(MemberValue value, Class<?> expectedValue) {
             if (value instanceof AnnotationMemberValue) {
-                Annotation annotation1 = ((AnnotationMemberValue) value).getValue();
-                Class c = cl.loadClass(annotation1.getTypeName());
-                return map(annotation1, c);
+                Annotation a = ((AnnotationMemberValue) value).getValue();
+                Class c = doLoadClass(a.getTypeName());
+                return map(a, c);
             }
             if (value instanceof ArrayMemberValue) {
                 MemberValue[] values = ((ArrayMemberValue) value).getValue();
@@ -70,7 +68,7 @@ class BAnnotation implements InvocationHandler {
                         .toArray(i -> (Object[]) Array.newInstance(componentType, i));
             }
             if (value instanceof ClassMemberValue) {
-                return cl.loadClass(((ClassMemberValue) value).getValue());
+                return doLoadClass(((ClassMemberValue) value).getValue());
             }
             if (value instanceof BooleanMemberValue) { return ((BooleanMemberValue) value).getValue(); }
             if (value instanceof ByteMemberValue) { return ((ByteMemberValue) value).getValue(); }
@@ -81,6 +79,14 @@ class BAnnotation implements InvocationHandler {
             if (value instanceof FloatMemberValue) { return ((FloatMemberValue) value).getValue(); }
             if (value instanceof DoubleMemberValue) { return ((DoubleMemberValue) value).getValue(); }
             return ((StringMemberValue) value).getValue();
+        }
+
+        private Class<?> doLoadClass(String n) {
+            try {
+                return cl.loadClass(n);
+            } catch (ClassNotFoundException e) {
+                throw new TypeNotPresentException(n, e);
+            }
         }
 
         @SuppressWarnings("unchecked")

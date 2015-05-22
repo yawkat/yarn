@@ -2,6 +2,7 @@ package at.yawk.yarn.compiler.tree;
 
 import at.yawk.yarn.Component;
 import at.yawk.yarn.ComponentScan;
+import at.yawk.yarn.Include;
 import at.yawk.yarn.compiler.BeanDefinition;
 import at.yawk.yarn.compiler.EntryPoint;
 import at.yawk.yarn.compiler.LookupBeanReference;
@@ -32,7 +33,8 @@ import javax.lang.model.type.DeclaredType;
 public class BeanTreeCompiler implements at.yawk.yarn.compiler.Compiler {
     private static final Set<Class<? extends Annotation>> ENTRYPOINT_MARKER_ANNOTATIONS = new HashSet<>(Arrays.asList(
             at.yawk.yarn.EntryPoint.class,
-            ComponentScan.class
+            ComponentScan.class,
+            Include.class
     ));
 
     private final BeanPool pool = new BeanPool();

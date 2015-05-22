@@ -59,9 +59,6 @@ public class BytecodeContext {
             if (declaring != null) {
                 outer = findType(declaring, scanPackage);
             }
-            if (((SignatureAttribute.ClassType) type).getName().contains("$")) {
-                new Exception().printStackTrace(System.out);
-            }
         }
         return new BTypeElement(this, outer, rawType);
     }
