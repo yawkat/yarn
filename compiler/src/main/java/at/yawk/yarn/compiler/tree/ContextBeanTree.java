@@ -17,7 +17,7 @@ public class ContextBeanTree {
     private Set<BeanDefinition> includedBeans;
     @Getter private List<BeanDefinition> sortedBeans;
 
-    public List<BeanDefinition> findBeans(BeanReference reference) {
+    public List<BeanProvider> findBeans(BeanReference reference) {
         if (reference instanceof ExplicitBeanReference) {
             return Collections.singletonList(((ExplicitBeanReference) reference).getBean());
         } else if (reference instanceof LookupBeanReference) {
@@ -27,24 +27,31 @@ public class ContextBeanTree {
         }
     }
 
-    public List<BeanDefinition> findBeans(LookupBeanReference reference) {
-        List<BeanDefinition> result = new ArrayList<>();
+    @SuppressWarnings("Convert2streamapi")
+    public List<BeanProvider> findBeans(LookupBeanReference reference) {
+        List<BeanProvider> result = new ArrayList<>();
 
-        outer:
         for (BeanDefinition bean : includedBeans) {
-            if (!Util.inherits(reference.getType(), bean.getType())) {
-                continue;
+            if (matchesFilters(reference, bean)) {
+                result.add(bean);
             }
-            // check all criteria
-            for (BeanFilter filter : reference.getFilters()) {
-                if (!filter.accept(bean)) {
-                    continue outer;
+            for (BeanMethod beanMethod : bean.getMethods()) {
+                if (matchesFilters(reference, beanMethod)) {
+                    result.add(beanMethod);
                 }
             }
-            result.add(bean);
         }
 
         return result;
+    }
+
+    private static boolean matchesFilters(LookupBeanReference reference, BeanProvider bean) {
+        for (BeanFilter filter : reference.getFilters()) {
+            if (!filter.accept(bean)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     void lookupReferences() {
@@ -57,7 +64,8 @@ public class ContextBeanTree {
                     // lookup references and replace with explicit ones
                     references.addAll(
                             findBeans((LookupBeanReference) dependency).stream()
-                                    .map(match -> new ExplicitBeanReference(match, dependency.isSoft()))
+                                    .map(match -> new ExplicitBeanReference(
+                                            match.getBaseDependency(), dependency.isSoft()))
                                     .collect(Collectors.toList())
                     );
                 } else {

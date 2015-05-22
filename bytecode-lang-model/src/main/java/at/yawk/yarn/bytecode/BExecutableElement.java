@@ -7,6 +7,7 @@ import javassist.CtConstructor;
 import javassist.CtMethod;
 import javassist.Modifier;
 import javassist.bytecode.*;
+import javassist.bytecode.annotation.Annotation;
 import javax.lang.model.element.*;
 import javax.lang.model.type.TypeMirror;
 import lombok.SneakyThrows;
@@ -29,7 +30,8 @@ class BExecutableElement extends BMemberElement<CtBehavior> implements Executabl
         if (member instanceof CtConstructor) {
             return context.noType();
         } else {
-            return context.getTypeMirror(signature().getReturnType());
+            SignatureAttribute.Type returnType = signature().getReturnType();
+            return context.getTypeMirror(returnType);
         }
     }
 
@@ -59,7 +61,7 @@ class BExecutableElement extends BMemberElement<CtBehavior> implements Executabl
             parameters.add(new BParameterElement(
                     context,
                     parameterTypes[i],
-                    vis.getAnnotations()[i], inv.getAnnotations()[i],
+                    getAnnotationsAt(vis, i), getAnnotationsAt(inv, i),
                     () -> {
                         LocalVariableAttribute attribute = (LocalVariableAttribute) member.getMethodInfo2()
                                 .getAttribute(LocalVariableAttribute.tag);
@@ -78,6 +80,11 @@ class BExecutableElement extends BMemberElement<CtBehavior> implements Executabl
             ));
         }
         return parameters;
+    }
+
+    private Annotation[] getAnnotationsAt(ParameterAnnotationsAttribute attr, int i) {
+        if (attr == null) { return new Annotation[0]; }
+        return attr.getAnnotations()[i];
     }
 
     @Override

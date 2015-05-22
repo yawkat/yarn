@@ -53,11 +53,13 @@ class BTypeElement extends BElement implements TypeElement {
     public TypeMirror getSuperclass() {
         SignatureAttribute attribute = signatureAttribute();
         if (attribute == null) {
-            return context.getTypeMirror(new SignatureAttribute.ClassType(clazz.getClassFile2().getSuperclass()));
+            String superclass = clazz.getClassFile2().getSuperclass();
+            return superclass == null ? null : context.getTypeMirror(BytecodeContext.parseType(superclass));
         }
         SignatureAttribute.ClassSignature classSignature =
                 SignatureAttribute.toClassSignature(attribute.getSignature());
-        return context.getTypeMirror(classSignature.getSuperClass());
+        SignatureAttribute.ClassType superClass = classSignature.getSuperClass();
+        return superClass == null ? null : context.getTypeMirror(superClass);
     }
 
     @Override
@@ -67,7 +69,7 @@ class BTypeElement extends BElement implements TypeElement {
         if (attribute == null) {
             String[] interfaces = clazz.getClassFile2().getInterfaces();
             return Arrays.stream(interfaces)
-                    .map(itf -> context.getTypeMirror(new SignatureAttribute.ClassType(itf)))
+                    .map(itf -> context.getTypeMirror(BytecodeContext.parseType(itf)))
                     .collect(Collectors.toList());
         }
         SignatureAttribute.ClassType[] interfaces =
@@ -95,10 +97,29 @@ class BTypeElement extends BElement implements TypeElement {
     @SneakyThrows
     public TypeMirror asType() {
         SignatureAttribute attribute = signatureAttribute();
+        SignatureAttribute.ClassType base = BytecodeContext.parseType(clazz.getName());
         if (attribute == null) {
-            return context.getTypeMirror(new SignatureAttribute.ClassType(clazz.getName()));
+            return context.getTypeMirror(base);
         }
-        return context.getTypeMirror(SignatureAttribute.toTypeSignature(attribute.getSignature()));
+        System.out.println("ParC t " + attribute.getSignature());
+        SignatureAttribute.ClassSignature cs =
+                SignatureAttribute.toClassSignature(attribute.getSignature());
+        if (base instanceof SignatureAttribute.NestedClassType) {
+            return context.getTypeMirror(new SignatureAttribute.NestedClassType(
+                    base.getDeclaringClass(),
+                    base.getName(),
+                    Arrays.stream(cs.getParameters())
+                            .map(p -> new SignatureAttribute.TypeArgument(p.getClassBound()))
+                            .toArray(SignatureAttribute.TypeArgument[]::new)
+            ));
+        } else {
+            return context.getTypeMirror(new SignatureAttribute.ClassType(
+                    base.getName(),
+                    Arrays.stream(cs.getParameters())
+                            .map(p -> new SignatureAttribute.TypeArgument(p.getClassBound()))
+                            .toArray(SignatureAttribute.TypeArgument[]::new)
+            ));
+        }
     }
 
     @Override

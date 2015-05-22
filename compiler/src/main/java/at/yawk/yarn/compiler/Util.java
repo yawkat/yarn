@@ -117,8 +117,11 @@ public class Util {
     }
 
     public static boolean inherits(TypeMirror parent, TypeMirror child) {
-        return parent.getKind() == TypeKind.DECLARED &&
-               inherits((TypeElement) ((DeclaredType) parent).asElement(), child);
+        return parent.equals(child) ||
+               (
+                       parent.getKind() == TypeKind.DECLARED &&
+                       inherits((TypeElement) ((DeclaredType) parent).asElement(), child)
+               );
     }
 
     private static boolean inherits(TypeElement parent, TypeMirror child) {
@@ -143,7 +146,8 @@ public class Util {
             if (parent.equals(e)) {
                 return true;
             }
-            if (inherits(parent, e.getSuperclass())) {
+            TypeMirror superclass = e.getSuperclass();
+            if (superclass != null && inherits(parent, superclass)) {
                 return true;
             }
             for (TypeMirror itf : e.getInterfaces()) {

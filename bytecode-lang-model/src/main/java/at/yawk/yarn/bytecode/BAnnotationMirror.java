@@ -21,7 +21,7 @@ class BAnnotationMirror extends BEntity implements AnnotationMirror {
 
     @Override
     public DeclaredType getAnnotationType() {
-        return context.getTypeMirror(new SignatureAttribute.ClassType(annotation.getTypeName()));
+        return context.getTypeMirror(BytecodeContext.parseType(annotation.getTypeName()));
     }
 
     @SuppressWarnings("unchecked")

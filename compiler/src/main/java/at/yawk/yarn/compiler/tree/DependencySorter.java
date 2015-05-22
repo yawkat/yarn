@@ -135,34 +135,27 @@ class DependencySorter<T> {
         }
 
         void insertAfter(Node node) {
-            System.out.println("IA " + node + " " + this + " " + Arrays.toString(nodeArray));
-
             if (lowest == this) {
                 lowest = nodeArray[trimIndex(index + 1)];
             }
 
             int n = trimIndex(this.index - node.index);
             if (n <= 1) { return; } // no change
-            System.out.println("N: " + n);
             if (n <= nodeArray.length / 2) {
                 for (int i = this.index; i < this.index + n; i++) {
                     Node here = nodeArray[(i + 1) % nodeArray.length];
-                    System.out.println("Mov " + here);
                     here.index = i % nodeArray.length;
                     nodeArray[here.index] = here;
                 }
             } else {
                 for (int i = node.index + n - 1; i > node.index; i--) {
                     Node here = nodeArray[i % nodeArray.length];
-                    System.out.println("Mov " + here);
                     here.index = (i + 1) % nodeArray.length;
                     nodeArray[here.index] = here;
                 }
             }
             this.index = (node.index + 1) % nodeArray.length;
             nodeArray[this.index] = this;
-
-            System.out.println("/IA " + Arrays.toString(nodeArray));
         }
 
         int value() {

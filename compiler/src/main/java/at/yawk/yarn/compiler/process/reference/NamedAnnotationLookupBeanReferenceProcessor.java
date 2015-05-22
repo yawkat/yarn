@@ -1,5 +1,6 @@
 package at.yawk.yarn.compiler.process.reference;
 
+import at.yawk.yarn.compiler.BeanDefinition;
 import at.yawk.yarn.compiler.Compiler;
 import at.yawk.yarn.compiler.LookupBeanReference;
 import javax.inject.Named;
@@ -16,7 +17,11 @@ public class NamedAnnotationLookupBeanReferenceProcessor extends AnnotationLooku
         } else {
             name = annotation.value();
         }
-        reference.addFilter(definition -> definition.getName().isPresent() &&
-                                          definition.getName().get().equals(name));
+        reference.addFilter(provider -> {
+            if (!(provider instanceof BeanDefinition)) { return false; }
+            BeanDefinition def = (BeanDefinition) provider;
+            return def.getName().isPresent() &&
+                   def.getName().get().equals(name);
+        });
     }
 }

@@ -4,8 +4,11 @@ import java.util.List;
 import javassist.CtField;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.FieldInfo;
+import javassist.bytecode.SignatureAttribute;
 import javax.lang.model.element.ElementVisitor;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeMirror;
+import lombok.SneakyThrows;
 
 /**
  * @author yawkat
@@ -38,5 +41,17 @@ class BFieldElement extends BMemberElement<CtField> implements VariableElement {
     @Override
     public String toString() {
         return member.getName();
+    }
+
+    @Override
+    @SneakyThrows
+    public TypeMirror asType() {
+        SignatureAttribute attribute =
+                (SignatureAttribute) member.getFieldInfo2().getAttribute(SignatureAttribute.tag);
+        String signature = attribute == null ?
+                member.getFieldInfo().getDescriptor() :
+                attribute.getSignature();
+        System.out.println("ParC f " + signature);
+        return context.getTypeMirror(SignatureAttribute.toFieldSignature(signature));
     }
 }

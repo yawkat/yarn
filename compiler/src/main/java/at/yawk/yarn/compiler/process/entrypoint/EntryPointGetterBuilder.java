@@ -40,8 +40,10 @@ public class EntryPointGetterBuilder implements EntryPointProcessor {
 
         // super
         TypeMirror superclass = element.getSuperclass();
-        if (superclass.getKind() == TypeKind.DECLARED) {
-            process(compiler, entryPoint, (TypeElement) ((DeclaredType) superclass).asElement());
+        if (superclass != null) {
+            if (superclass.getKind() == TypeKind.DECLARED) {
+                process(compiler, entryPoint, (TypeElement) ((DeclaredType) superclass).asElement());
+            }
         }
 
         // interfaces

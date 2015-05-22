@@ -1,6 +1,6 @@
 package at.yawk.yarn.compiler.instruction.resolver;
 
-import at.yawk.yarn.compiler.BeanDefinition;
+import at.yawk.yarn.compiler.BeanProvider;
 import at.yawk.yarn.compiler.BeanReference;
 import at.yawk.yarn.compiler.instruction.StatementContext;
 import java.util.*;
@@ -29,7 +29,7 @@ public class CollectionBeanResolver implements BeanResolver {
             suffix = "))";
         }
 
-        List<BeanDefinition> candidates = ctx.getTree().findBeans(reference);
+        List<BeanProvider> candidates = ctx.getTree().findBeans(reference);
         for (int i = 0; i < candidates.size(); i++) {
             if (i != 0) { ctx.append(", "); }
             SingletonBeanResolver.appendBeanField(ctx, candidates.get(i));

@@ -5,6 +5,4 @@ import at.yawk.yarn.compiler.instruction.Instruction;
 /**
  * @author yawkat
  */
-public interface BeanResolver extends Instruction {
-    // todo
-}
+public interface BeanResolver extends Instruction {}

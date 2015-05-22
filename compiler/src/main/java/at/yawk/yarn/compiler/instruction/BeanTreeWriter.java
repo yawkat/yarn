@@ -94,8 +94,6 @@ public class BeanTreeWriter {
                 .addModifiers(Modifier.FINAL, Modifier.PUBLIC);
 
         TypeName sup = TypeName.get(entryPoint.getDefinitionElement().asType());
-        System.out.println(((DeclaredType) entryPoint.getDefinitionElement().asType()).asElement()
-                                   .getEnclosingElement());
         if (entryPoint.getDefinitionElement().getKind() == ElementKind.INTERFACE) {
             type.addSuperinterface(sup);
         } else {

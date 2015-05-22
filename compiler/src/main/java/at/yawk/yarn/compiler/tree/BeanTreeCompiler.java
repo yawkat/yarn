@@ -19,6 +19,7 @@ import at.yawk.yarn.compiler.process.entrypoint.EntryPointProcessor;
 import at.yawk.yarn.compiler.process.reference.AnnotatedWithFilterProcessor;
 import at.yawk.yarn.compiler.process.reference.LookupBeanReferenceProcessor;
 import at.yawk.yarn.compiler.process.reference.NamedAnnotationLookupBeanReferenceProcessor;
+import at.yawk.yarn.compiler.process.reference.TypeFilterProcessor;
 import java.lang.annotation.Annotation;
 import java.util.*;
 import javax.inject.Inject;
@@ -157,7 +158,8 @@ public class BeanTreeCompiler implements at.yawk.yarn.compiler.Compiler {
 
     private final List<LookupBeanReferenceProcessor> referenceProcessors = Arrays.asList(
             new AnnotatedWithFilterProcessor(),
-            new NamedAnnotationLookupBeanReferenceProcessor()
+            new NamedAnnotationLookupBeanReferenceProcessor(),
+            new TypeFilterProcessor()
     );
 
     @Override
@@ -172,7 +174,8 @@ public class BeanTreeCompiler implements at.yawk.yarn.compiler.Compiler {
             new NamedAnnotationBeanDefinitionProcessor(),
             new InjectMembersBeanDefinitionProcessor(),
             new PostConstructDefinitionProcessor(),
-            new ProvidesBeanDefinitionProcessor()
+            new ProvidesBeanDefinitionProcessor(),
+            new BeanMethodDefinitionProcessor()
     );
 
     void processBeanDefinition(BeanDefinition definition) {

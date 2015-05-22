@@ -14,7 +14,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class BeanDefinition {
+public class BeanDefinition implements BeanProvider {
     private BeanId id;
 
     /**
@@ -39,6 +39,8 @@ public class BeanDefinition {
 
     private Set<BeanDefinition> providingDefinitions = new HashSet<>();
 
+    private List<BeanMethod> methods = new ArrayList<>();
+
     private boolean component = false;
 
     @Override
@@ -47,5 +49,10 @@ public class BeanDefinition {
                 "Bean{id=%s name=%s type=%s #deps=%d}",
                 id, name.orElse(implicitName), type, dependencies.size()
         );
+    }
+
+    @Override
+    public BeanDefinition getBaseDependency() {
+        return this;
     }
 }

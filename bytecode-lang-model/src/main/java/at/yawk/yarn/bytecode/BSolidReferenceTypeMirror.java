@@ -23,25 +23,27 @@ class BSolidReferenceTypeMirror extends BTypeMirror
 
     @Override
     public TypeKind getKind() {
-        switch (type.jvmTypeName()) {
-        case "boolean":
-            return TypeKind.BOOLEAN;
-        case "byte":
-            return TypeKind.BYTE;
-        case "short":
-            return TypeKind.SHORT;
-        case "char":
-            return TypeKind.CHAR;
-        case "int":
-            return TypeKind.INT;
-        case "long":
-            return TypeKind.LONG;
-        case "float":
-            return TypeKind.FLOAT;
-        case "double":
-            return TypeKind.DOUBLE;
-        case "null":
-            return TypeKind.NULL;
+        if (type instanceof SignatureAttribute.BaseType) {
+            switch (((SignatureAttribute.BaseType) type).getDescriptor()) {
+            case 'Z':
+                return TypeKind.BOOLEAN;
+            case 'B':
+                return TypeKind.BYTE;
+            case 'S':
+                return TypeKind.SHORT;
+            case 'C':
+                return TypeKind.CHAR;
+            case 'I':
+                return TypeKind.INT;
+            case 'J':
+                return TypeKind.LONG;
+            case 'F':
+                return TypeKind.FLOAT;
+            case 'D':
+                return TypeKind.DOUBLE;
+            case 'V':
+                return TypeKind.VOID;
+            }
         }
         if (type instanceof SignatureAttribute.ArrayType) {
             return TypeKind.ARRAY;
@@ -97,11 +99,11 @@ class BSolidReferenceTypeMirror extends BTypeMirror
     @Override
     public List<? extends TypeMirror> getTypeArguments() {
         if (type instanceof SignatureAttribute.ClassType) {
-            SignatureAttribute.TypeArgument[] arguments =
-                    ((SignatureAttribute.ClassType) type).getTypeArguments();
+            SignatureAttribute.ClassType classType = (SignatureAttribute.ClassType) this.type;
+            SignatureAttribute.TypeArgument[] arguments = classType.getTypeArguments();
             if (arguments != null) {
                 return Arrays.stream(arguments)
-                        .map(arg -> context.getTypeMirror(type))
+                        .map(arg -> context.getTypeMirror(arg.getType()))
                         .collect(Collectors.toList());
             }
         }
@@ -111,5 +113,40 @@ class BSolidReferenceTypeMirror extends BTypeMirror
     @Override
     public String toString() {
         return type.toString();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof BSolidReferenceTypeMirror &&
+               typesEqual(this.type, ((BSolidReferenceTypeMirror) obj).type);
+    }
+
+    private static boolean typesEqual(SignatureAttribute.Type a, SignatureAttribute.Type b) {
+        if (a.getClass() != b.getClass()) { return false; }
+        if (a.getClass() == SignatureAttribute.BaseType.class) {
+            return ((SignatureAttribute.BaseType) a).getDescriptor() ==
+                   ((SignatureAttribute.BaseType) b).getDescriptor();
+        }
+        if (a.getClass() == SignatureAttribute.ArrayType.class) {
+            return typesEqual(((SignatureAttribute.ArrayType) a).getComponentType(),
+                              ((SignatureAttribute.ArrayType) b).getComponentType());
+        }
+        if (a.getClass() == SignatureAttribute.NestedClassType.class) {
+            return typesEqual(((SignatureAttribute.NestedClassType) a).getDeclaringClass(),
+                              ((SignatureAttribute.NestedClassType) b).getDeclaringClass()) &&
+                   ((SignatureAttribute.NestedClassType) a).getName()
+                           .equals(((SignatureAttribute.NestedClassType) b).getName());
+        }
+        if (a.getClass() == SignatureAttribute.ClassType.class) {
+            return ((SignatureAttribute.ClassType) a).getName()
+                    .equals(((SignatureAttribute.ClassType) b).getName());
+        }
+        return ((SignatureAttribute.TypeVariable) a).getName()
+                .equals(((SignatureAttribute.TypeVariable) b).getName());
+    }
+
+    @Override
+    public int hashCode() {
+        return this.type.toString().hashCode();
     }
 }
