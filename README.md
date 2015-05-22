@@ -69,3 +69,35 @@ public interface Main {
 ```
 
 You can include components with `@ComponentScan` and `@Include`. If either of those annotations is present, `@EntryPoint` is optional. The entry point can either be a class or an interface, abstract methods will be overridden with getters to the requested beans.
+
+Maven
+-----
+
+To include the yarn annotations an `Yarn` class, add this dependency:
+
+```
+<dependency>
+    <groupId>at.yawk.yarn</groupId>
+    <artifactId>yarn</artifactId>
+    <version>1.0-SNAPSHOT</version>
+</dependency>
+```
+
+To compile your entry points, add this plugin definition:
+
+```
+<plugin>
+    <groupId>at.yawk.yarn</groupId>
+    <artifactId>yarn-maven-plugin</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <executions>
+        <execution>
+            <phase>compile</phase>
+            <goals>
+                <goal>compile</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
