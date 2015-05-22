@@ -3,6 +3,8 @@ yarn
 
 Compile-time dependency injection and component framework inspired by spring and dagger.
 
+Made as a lightweight replacement for spring for a project that required very fast startup times.
+
 Beans
 -----
 
