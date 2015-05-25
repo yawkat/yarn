@@ -22,9 +22,6 @@ public class TypeFilterProcessor implements LookupBeanReferenceProcessor {
             Optional<ExecutableElement> found =
                     findFunctionalInterfaceMethod((TypeElement) ((DeclaredType) type).asElement());
             functional = found == null ? null : found.orElse(null);
-            if (functional != null) {
-                System.out.println(reference + " is functional: " + functional);
-            }
         } else {
             functional = null;
         }

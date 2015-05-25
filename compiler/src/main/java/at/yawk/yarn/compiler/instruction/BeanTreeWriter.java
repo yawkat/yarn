@@ -11,7 +11,6 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import javax.lang.model.element.*;
-import javax.lang.model.type.DeclaredType;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
@@ -115,7 +114,6 @@ public class BeanTreeWriter {
 
             type.addField(field);
 
-            System.out.println("ref: " + ClassName.get(getAccessPackage(bean), YARN_FACTORY_NAME));
             constructor.addStatement(
                     "$N = $T.$L(this)",
                     field, ClassName.get(getAccessPackage(bean), YARN_FACTORY_NAME), id
