@@ -1,5 +1,6 @@
 package at.yawk.yarn.compiler.tree;
 
+import at.yawk.yarn.compiler.error.CircularDependencyException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 class DependencySorter<T> {
     private final Node[] nodeArray;
     private Node lowest;
+    private int insertIndex = 0;
 
     @SuppressWarnings("unchecked")
     private DependencySorter(Set<T> input,
@@ -38,9 +40,14 @@ class DependencySorter<T> {
             for (Node dependency : n.dependencies) {
                 dependency.dependents.add(n);
             }
-            n.index = i;
-            nodeArray[i++] = n;
         }
+
+        Deque<Node> deque = new ArrayDeque<>();
+        for (Node n : nodes.values()) {
+            deque.clear();
+            insertHard(n, deque);
+        }
+
         lowest = nodeArray[0];
     }
 
@@ -48,27 +55,34 @@ class DependencySorter<T> {
                                    Function<T, Stream<T>> hardDependencies,
                                    Function<T, Stream<T>> softDependencies) {
         DependencySorter<T> sorter = new DependencySorter<>(input, hardDependencies, softDependencies);
-        sorter.passHard();
         sorter.passSoft();
         return sorter.getSorted();
     }
 
-    // HARD PASS
-
-    private void passHard() {
-        Node end = nodeArray[0];
-        Node current = nodeArray[nodeArray.length - 1];
-        while (true) {
-            Node next = nodeArray[trimIndex(current.index - 1)];
-            Node highestHardDependency = highest(current.hardDependencies);
-            if (highestHardDependency != null && highestHardDependency.value() > current.value()) {
-                current.insertAfter(highestHardDependency);
+    private void insertHard(Node node, Deque<Node> passed) {
+        if (passed.contains(node)) {
+            StringBuilder builder = new StringBuilder();
+            passed.pollLast();
+            while (true) {
+                Node last = passed.pollLast();
+                builder.insert(0, last.value + " --> ");
+                if (last == node) {
+                    break;
+                }
             }
-            if (current == end) {
-                break;
-            }
-            current = next;
+            builder.append(node.value);
+            throw new CircularDependencyException("Circular dependency: " + builder);
         }
+        if (node.index != -1) {
+            // already inserted
+            return;
+        }
+        passed.addLast(node);
+        for (Node dependency : node.hardDependencies) {
+            insertHard(dependency, passed);
+        }
+        node.placeAt(insertIndex++);
+        passed.removeLast();
     }
 
     // SOFT PASS
@@ -123,7 +137,7 @@ class DependencySorter<T> {
         /**
          * Index in the array.
          */
-        int index;
+        int index = -1;
 
         boolean adding = false;
         boolean added = false;
