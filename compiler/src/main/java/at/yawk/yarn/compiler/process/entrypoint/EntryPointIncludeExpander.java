@@ -4,6 +4,7 @@ import at.yawk.yarn.compiler.BeanDefinition;
 import at.yawk.yarn.compiler.Compiler;
 import at.yawk.yarn.compiler.EntryPoint;
 import at.yawk.yarn.compiler.tree.BeanPool;
+import java.util.ArrayList;
 
 /**
  * @author yawkat
@@ -11,7 +12,7 @@ import at.yawk.yarn.compiler.tree.BeanPool;
 public class EntryPointIncludeExpander implements EntryPointProcessor {
     @Override
     public void process(Compiler compiler, EntryPoint entryPoint, BeanPool tree) {
-        for (BeanDefinition definition : entryPoint.getIncludedBeans()) {
+        for (BeanDefinition definition : new ArrayList<>(entryPoint.getIncludedBeans())) {
             expand(entryPoint, definition);
         }
     }

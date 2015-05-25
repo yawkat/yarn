@@ -20,6 +20,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.codehaus.plexus.compiler.util.scan.SimpleSourceInclusionScanner;
 import org.codehaus.plexus.compiler.util.scan.SourceInclusionScanner;
+import org.slf4j.impl.MavenLoggerFactory;
 
 /**
  * @author yawkat
@@ -37,6 +38,8 @@ public class YarnCompileMojo extends AbstractCompilerMojo {
 
     @Override
     public void execute() throws MojoExecutionException, CompilationFailureException {
+        MavenLoggerFactory.instance.setLog(getLog());
+
         try {
             walkAndGenerate();
         } catch (IOException e) {
@@ -44,6 +47,8 @@ public class YarnCompileMojo extends AbstractCompilerMojo {
         } catch (NotFoundException e) {
             throw new RuntimeException(e);
         }
+
+        getLog().info("Compiling generated classes");
 
         super.execute();
     }
@@ -64,6 +69,8 @@ public class YarnCompileMojo extends AbstractCompilerMojo {
             }
         }
 
+        getLog().info("Building classpath with " + classNames.size() + " classes");
+
         // Build javassist classpath
         ClassPool pool = new ClassPool();
         pool.appendSystemPath();
@@ -71,11 +78,15 @@ public class YarnCompileMojo extends AbstractCompilerMojo {
             pool.appendClassPath(cp);
         }
 
+        getLog().info("Scanning classes");
+
         // walk and scan top-level classes
         BytecodeContext context = BytecodeContext.of(pool);
         for (String className : classNames) {
             compiler.scan(context.findType(className));
         }
+
+        getLog().info("Building trees");
 
         // generate code
         BeanPool tree = compiler.finishTree();
@@ -97,12 +108,16 @@ public class YarnCompileMojo extends AbstractCompilerMojo {
         List<String> names = new ArrayList<>();
         try {
             Files.list(directory).forEach(c -> {
+                String name = c.getFileName().toString();
+                String separator = c.getFileSystem().getSeparator();
+                if (name.endsWith(separator)) {
+                    name = name.substring(0, name.length() - separator.length());
+                }
                 if (Files.isDirectory(c)) {
-                    for (String name : collectClassNames(c)) {
-                        names.add(c.getFileName() + "." + name);
+                    for (String child : collectClassNames(c)) {
+                        names.add(name + "." + child);
                     }
                 } else {
-                    String name = c.getFileName().toString();
                     if (name.endsWith(".class") &&
                         // exclude nested classes
                         !name.contains("$")) {

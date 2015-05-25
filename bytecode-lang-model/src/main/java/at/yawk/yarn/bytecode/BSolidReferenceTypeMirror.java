@@ -13,7 +13,7 @@ import javax.lang.model.type.*;
  * @author yawkat
  */
 class BSolidReferenceTypeMirror extends BTypeMirror
-        implements ReferenceType, ArrayType, DeclaredType, PrimitiveType, NullType {
+        implements ReferenceType, ArrayType, DeclaredType, PrimitiveType, NullType, TypeVariable {
     final SignatureAttribute.Type type;
 
     BSolidReferenceTypeMirror(BytecodeContext context, SignatureAttribute.Type type) {
@@ -47,9 +47,11 @@ class BSolidReferenceTypeMirror extends BTypeMirror
         }
         if (type instanceof SignatureAttribute.ArrayType) {
             return TypeKind.ARRAY;
-        } else {
-            return TypeKind.DECLARED;
         }
+        if (type instanceof SignatureAttribute.TypeVariable) {
+            return TypeKind.TYPEVAR;
+        }
+        return TypeKind.DECLARED;
     }
 
     @Override
@@ -89,6 +91,16 @@ class BSolidReferenceTypeMirror extends BTypeMirror
     @Override
     public Element asElement() {
         return context.findType(type);
+    }
+
+    @Override
+    public TypeMirror getUpperBound() {
+        throw unsupported();
+    }
+
+    @Override
+    public TypeMirror getLowerBound() {
+        throw unsupported();
     }
 
     @Override

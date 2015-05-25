@@ -3,6 +3,7 @@ package at.yawk.yarn.compiler.process.reference;
 import at.yawk.yarn.compiler.*;
 import at.yawk.yarn.compiler.Compiler;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
@@ -18,7 +19,12 @@ public class TypeFilterProcessor implements LookupBeanReferenceProcessor {
         TypeMirror type = reference.getType();
         ExecutableElement functional;
         if (type.getKind() == TypeKind.DECLARED) {
-            functional = findFunctionalInterfaceMethod((TypeElement) ((DeclaredType) type).asElement());
+            Optional<ExecutableElement> found =
+                    findFunctionalInterfaceMethod((TypeElement) ((DeclaredType) type).asElement());
+            functional = found == null ? null : found.orElse(null);
+            if (functional != null) {
+                System.out.println(reference + " is functional: " + functional);
+            }
         } else {
             functional = null;
         }
@@ -46,26 +52,39 @@ public class TypeFilterProcessor implements LookupBeanReferenceProcessor {
         });
     }
 
-    private static ExecutableElement findFunctionalInterfaceMethod(TypeElement element) {
+    /**
+     * @return filled: only abstract interface method <br>
+     * empty: no abstract interface method found <br>
+     * null: too many interface methods found or not an interface
+     */
+    private static Optional<ExecutableElement> findFunctionalInterfaceMethod(TypeElement element) {
         if (element.getKind() != ElementKind.INTERFACE) { return null; }
         ExecutableElement match = null;
         for (Element enclosed : element.getEnclosedElements()) {
             if (enclosed.getKind() != ElementKind.METHOD) { continue; }
             Set<Modifier> modifiers = enclosed.getModifiers();
             if (!modifiers.contains(Modifier.ABSTRACT)) { continue; }
+            if (match != null) {
+                // too many found
+                return null;
+            }
             match = (ExecutableElement) enclosed;
         }
         for (TypeMirror itf : element.getInterfaces()) {
-            ExecutableElement superMatch = findFunctionalInterfaceMethod(
+            Optional<ExecutableElement> superMatch = findFunctionalInterfaceMethod(
                     (TypeElement) ((DeclaredType) itf).asElement());
-            if (superMatch != null) {
+            if (superMatch == null) {
+                // fail-fast in super
+                return null;
+            }
+            if (superMatch.isPresent()) {
                 // multiple matches, not functional
                 // todo: overridden now-default methods?
                 if (match != null) { return null; }
 
-                match = superMatch;
+                match = superMatch.get();
             }
         }
-        return match;
+        return Optional.ofNullable(match);
     }
 }

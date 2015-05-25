@@ -119,6 +119,7 @@ public class Util {
     public static boolean inherits(TypeMirror parent, TypeMirror child) {
         return parent.equals(child) ||
                (
+                       child.getKind() == TypeKind.DECLARED &&
                        parent.getKind() == TypeKind.DECLARED &&
                        inherits((TypeElement) ((DeclaredType) parent).asElement(), child)
                );

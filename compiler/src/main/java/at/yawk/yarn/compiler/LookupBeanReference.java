@@ -7,11 +7,13 @@ import java.util.List;
 import java.util.Optional;
 import javax.lang.model.type.TypeMirror;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * @author yawkat
  */
 @Data
+@EqualsAndHashCode(of = { "type", "resolver", "name" })
 public class LookupBeanReference implements BeanReference {
     private TypeMirror type;
     private List<Annotation> annotations;

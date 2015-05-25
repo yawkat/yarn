@@ -15,4 +15,9 @@ public class EntryPoint {
     private TypeElement definitionElement;
     private Set<BeanDefinition> includedBeans = new HashSet<>();
     private Map<String, BeanReference> getters = new HashMap<>();
+
+    @Override
+    public String toString() {
+        return definitionElement.getQualifiedName().toString();
+    }
 }

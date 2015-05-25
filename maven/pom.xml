@@ -13,6 +13,13 @@
     <artifactId>yarn-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
 
+    <repositories>
+        <repository>
+            <id>yawkat</id>
+            <url>http://mvn.yawk.at</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>at.yawk.yarn</groupId>

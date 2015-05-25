@@ -26,10 +26,12 @@ import java.util.*;
 import javax.inject.Inject;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author yawkat
  */
+@Slf4j
 public class BeanTreeCompiler implements at.yawk.yarn.compiler.Compiler {
     private static final Set<Class<? extends Annotation>> ENTRYPOINT_MARKER_ANNOTATIONS = new HashSet<>(Arrays.asList(
             at.yawk.yarn.EntryPoint.class,
@@ -146,12 +148,18 @@ public class BeanTreeCompiler implements at.yawk.yarn.compiler.Compiler {
     }
 
     public BeanPool finishTree() {
+        log.info("Assigning IDs");
         pool.assignIds();
         pool.getEntryPoints().forEach((ep, ctx) -> {
+            log.info("Processing entry point {}", ep);
             processEntryPoint(ep);
+            log.info("Will load {} beans", ep.getIncludedBeans().size());
             ctx.setIncludedBeans(ep.getIncludedBeans());
+            log.info("Resolving dependencies");
             ctx.lookupReferences();
+            log.info("Sorting dependencies");
             ctx.sort();
+            log.info("Entry point processed");
         });
         return pool;
     }

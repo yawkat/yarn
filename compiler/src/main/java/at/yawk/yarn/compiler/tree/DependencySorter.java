@@ -108,12 +108,8 @@ class DependencySorter<T> {
      * Trim the given index a valid array index. Must be within +- nodeArray.length of accept range.
      */
     private int trimIndex(int i) {
-        if (i < 0) {
-            // only support one shift
-            return i + nodeArray.length;
-        } else {
-            return i % nodeArray.length;
-        }
+        // only support one shift
+        return (i + nodeArray.length) % nodeArray.length;
     }
 
     @RequiredArgsConstructor
@@ -124,6 +120,9 @@ class DependencySorter<T> {
         List<Node> dependencies;
         List<Node> dependents = new ArrayList<>(0);
 
+        /**
+         * Index in the array.
+         */
         int index;
 
         boolean adding = false;
@@ -134,28 +133,34 @@ class DependencySorter<T> {
             lowest = this;
         }
 
+        void placeAt(int index) {
+            this.index = index;
+            nodeArray[this.index] = this;
+        }
+
         void insertAfter(Node node) {
             if (lowest == this) {
                 lowest = nodeArray[trimIndex(index + 1)];
             }
 
+            // distance to that item to the left.
+            // always in [0; len[
             int n = trimIndex(this.index - node.index);
             if (n <= 1) { return; } // no change
-            if (n <= nodeArray.length / 2) {
-                for (int i = this.index; i < this.index + n; i++) {
+            if (n > nodeArray.length / 2) {
+                // distance to that item to the right
+                int m = trimIndex(node.index - this.index);
+                for (int i = this.index; i < this.index + m; i++) {
                     Node here = nodeArray[(i + 1) % nodeArray.length];
-                    here.index = i % nodeArray.length;
-                    nodeArray[here.index] = here;
+                    here.placeAt(i % nodeArray.length);
                 }
             } else {
                 for (int i = node.index + n - 1; i > node.index; i--) {
                     Node here = nodeArray[i % nodeArray.length];
-                    here.index = (i + 1) % nodeArray.length;
-                    nodeArray[here.index] = here;
+                    here.placeAt((i + 1) % nodeArray.length);
                 }
             }
-            this.index = (node.index + 1) % nodeArray.length;
-            nodeArray[this.index] = this;
+            placeAt((node.index + 1) % nodeArray.length);
         }
 
         int value() {

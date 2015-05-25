@@ -25,7 +25,8 @@ public class SingletonBeanResolver implements BeanResolver {
             throw new NoSuchBeanException("No bean found for reference " + reference);
         }
         if (candidates.size() > 1) {
-            throw new AmbiguousBeanException("Too many beans found for reference " + reference);
+            throw new AmbiguousBeanException(
+                    "Too many beans found for reference " + reference + ": candidates are " + candidates);
         }
         BeanProvider bean = candidates.get(0);
         appendBeanField(ctx, bean);

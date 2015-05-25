@@ -115,6 +115,7 @@ public class BeanTreeWriter {
 
             type.addField(field);
 
+            System.out.println("ref: " + ClassName.get(getAccessPackage(bean), YARN_FACTORY_NAME));
             constructor.addStatement(
                     "$N = $T.$L(this)",
                     field, ClassName.get(getAccessPackage(bean), YARN_FACTORY_NAME), id
