@@ -105,13 +105,18 @@ public class Util {
         List<Annotation> annotations = new ArrayList<>();
         Set<String> resolvedClasses = new HashSet<>();
         for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
-            try {
-                String qname = ((TypeElement) mirror.getAnnotationType().asElement()).getQualifiedName().toString();
-                if (resolvedClasses.add(qname)) {
+            String qname = ((TypeElement) mirror.getAnnotationType().asElement()).getQualifiedName().toString();
+            if (resolvedClasses.add(qname)) {
+                try {
                     Class annotationClass = Class.forName(qname);
-                    annotations.add(element.getAnnotation(annotationClass));
-                }
-            } catch (Exception ignored) {}
+                    Annotation a = element.getAnnotation(annotationClass);
+                    if (a != null) {
+                        annotations.add(a);
+                        continue;
+                    }
+                } catch (ClassNotFoundException ignored) {}
+                annotations.add(new MissingAnnotation(mirror));
+            }
         }
         return annotations;
     }

@@ -33,7 +33,7 @@ public class InjectMembersBeanDefinitionProcessor implements BeanDefinitionProce
             if (member.getKind() == ElementKind.FIELD) {
                 LookupBeanReference reference = new LookupBeanReference();
                 reference.setType(member.asType());
-                reference.setAnnotations(Util.getAnnotations(element));
+                reference.setAnnotations(Util.getAnnotations(member));
                 compiler.processLookupBeanReference(reference);
 
                 definition.getDependencies().add(reference);
@@ -48,7 +48,7 @@ public class InjectMembersBeanDefinitionProcessor implements BeanDefinitionProce
                 for (VariableElement parameter : ((ExecutableElement) member).getParameters()) {
                     LookupBeanReference reference = new LookupBeanReference();
                     reference.setType(parameter.asType());
-                    reference.setAnnotations(Util.getAnnotations(element));
+                    reference.setAnnotations(Util.getAnnotations(member));
 
                     compiler.processLookupBeanReference(reference);
 

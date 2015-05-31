@@ -7,6 +7,7 @@ import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import javassist.bytecode.annotation.*;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 
 /**
  * @author yawkat
@@ -22,30 +23,45 @@ class BAnnotation implements InvocationHandler {
     }
 
     @Override
+    @SneakyThrows
     public Object invoke(Object proxy, Method method, Object[] args) {
         assert args.length == 0;
         MemberValue value = annotation.getMemberValue(method.getName());
-        return value == null ?
-                method.getDefaultValue() :
-                factory.map(value, method.getReturnType());
+        if (value == null) {
+            Object def = method.getDefaultValue();
+            if (def != null) {
+                return def;
+            }
+            if (method.getName().equals("annotationType")) {
+                return factory.doLoadClass(annotation.getTypeName());
+            }
+            return Object.class.getMethod(method.getName(), method.getParameterTypes())
+                    .invoke(this, args); // object method
+        } else {
+            return factory.map(value, method.getReturnType());
+        }
     }
 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder(type.getSimpleName()).append('{');
-        for (int i = 0; i < type.getMethods().length; i++) {
+        for (int i = 0; i < type.getDeclaredMethods().length; i++) {
             if (i != 0) { builder.append(", "); }
-            Method method = type.getMethods()[i];
+            Method method = type.getDeclaredMethods()[i];
             builder.append(method.getName()).append('=');
-            Object val = invoke(null, method, new Object[0]);
-            if (val.getClass().isArray()) {
-                builder.append(Arrays.toString((Object[]) val));
-            } else if (val instanceof String) {
-                builder.append('"').append(val).append('"');
-            } else if (val instanceof Class<?>) {
-                builder.append(((Class) val).getName());
-            } else {
-                builder.append(val);
+            try {
+                Object val = invoke(null, method, new Object[0]);
+                if (val.getClass().isArray()) {
+                    builder.append(Arrays.toString((Object[]) val));
+                } else if (val instanceof String) {
+                    builder.append('"').append(val).append('"');
+                } else if (val instanceof Class<?>) {
+                    builder.append(((Class) val).getName());
+                } else {
+                    builder.append(val);
+                }
+            } catch (TypeNotPresentException e) {
+                builder.append(e.typeName());
             }
         }
         return builder.append('}').toString();
