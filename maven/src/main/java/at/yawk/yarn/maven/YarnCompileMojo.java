@@ -83,7 +83,11 @@ public class YarnCompileMojo extends AbstractCompilerMojo {
         // walk and scan top-level classes
         BytecodeContext context = BytecodeContext.of(pool);
         for (String className : classNames) {
-            compiler.scan(context.findType(className));
+            try {
+                compiler.scan(context.findType(className));
+            } catch (Exception e) {
+                getLog().warn("Error while processing class " + className, e);
+            }
         }
 
         getLog().info("Building trees");
