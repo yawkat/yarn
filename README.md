@@ -33,6 +33,25 @@ public class MyComponent {
 }
 ```
 
+Lambda Methods
+--------------
+
+Methods can be injected as lambdas from any bean.
+
+```
+@Component
+public class MyBus {
+    @AcceptMethods
+    @AnnotatedWith(MyAnnotation.class)
+    @Inject
+    List<EventListener> eventListeners;
+
+    public interface EventListener {
+        void doStuff(Object o);
+    }
+}
+```
+
 Dependency Injection
 --------------------
 
@@ -72,6 +91,8 @@ You can include components with `@ComponentScan` and `@Include`. If either of th
 
 Maven
 -----
+
+Yarn uses the `@Inject`, `@Named` and `Provider` annotations and classes from `javax.inject`.
 
 To include the yarn annotations an `Yarn` class, add this dependency:
 
