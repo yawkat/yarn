@@ -10,6 +10,7 @@ import at.yawk.yarn.compiler.instruction.resolver.SingletonBeanResolver;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 
@@ -20,7 +21,8 @@ public class ProvidesBeanDefinitionProcessor implements BeanDefinitionProcessor 
     @Override
     public void process(Compiler compiler, BeanDefinition definition) {
         if (definition.getType().getKind() == TypeKind.DECLARED) {
-            for (Element member : ((DeclaredType) definition.getType()).asElement().getEnclosedElements()) {
+            for (Element member : Util.getEnclosedElementsWithParents(
+                    (TypeElement) ((DeclaredType) definition.getType()).asElement())) {
                 if (member.getAnnotation(Provides.class) == null) { continue; }
                 if (member.getKind() == ElementKind.METHOD) {
                     ExecutableElement method = (ExecutableElement) member;

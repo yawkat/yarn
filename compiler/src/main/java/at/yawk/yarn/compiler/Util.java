@@ -165,4 +165,26 @@ public class Util {
         }
         return result.toString();
     }
+
+    /**
+     * Get all elements enclosed by the given type and its parent types.
+     */
+    public static List<Element> getEnclosedElementsWithParents(TypeElement element) {
+        List<Element> elements = new ArrayList<>();
+        // super
+        TypeMirror superclass = element.getSuperclass();
+        if (superclass != null && superclass.getKind() == TypeKind.DECLARED) {
+            elements.addAll(getEnclosedElementsWithParents((TypeElement) ((DeclaredType) superclass).asElement()));
+        }
+        // interfaces
+        //noinspection Convert2streamapi
+        for (TypeMirror itf : element.getInterfaces()) {
+            if (itf.getKind() == TypeKind.DECLARED) {
+                elements.addAll(getEnclosedElementsWithParents((TypeElement) ((DeclaredType) itf).asElement()));
+            }
+        }
+        // self
+        elements.addAll(element.getEnclosedElements());
+        return elements;
+    }
 }

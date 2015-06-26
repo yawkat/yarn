@@ -165,7 +165,7 @@ class BTypeElement extends BElement implements TypeElement {
                 String name = attribute.innerName(i);
                 if (name == null) { continue; } // anonymous class
                 String outer = attribute.outerClass(i);
-                if (!outer.equals(clazz.getName())) { continue; } // further nested class
+                if (!clazz.getName().equals(outer)) { continue; } // further nested class
                 CtClass raw = context.findRawType(clazz.getName() + '$' + name);
                 members.add(new BTypeElement(context, this, raw));
             }

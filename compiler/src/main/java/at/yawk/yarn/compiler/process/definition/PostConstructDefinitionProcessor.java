@@ -1,11 +1,13 @@
 package at.yawk.yarn.compiler.process.definition;
 
 import at.yawk.yarn.compiler.BeanDefinition;
+import at.yawk.yarn.compiler.Util;
 import at.yawk.yarn.compiler.error.UnsupportedMemberException;
 import at.yawk.yarn.compiler.instruction.setup.PostConstructSetupInstruction;
 import javax.annotation.PostConstruct;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 
@@ -17,7 +19,7 @@ public class PostConstructDefinitionProcessor implements BeanDefinitionProcessor
     public void process(at.yawk.yarn.compiler.Compiler compiler, BeanDefinition definition) {
         if (!(definition.getType().getKind() == TypeKind.DECLARED)) { return; }
         Element element = ((DeclaredType) definition.getType()).asElement();
-        for (Element member : element.getEnclosedElements()) {
+        for (Element member : Util.getEnclosedElementsWithParents((TypeElement) element)) {
             // check for @PostConstruct
             if (member.getAnnotation(PostConstruct.class) == null) { continue; }
 

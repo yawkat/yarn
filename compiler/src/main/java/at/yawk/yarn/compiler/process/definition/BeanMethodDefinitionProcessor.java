@@ -24,7 +24,7 @@ public class BeanMethodDefinitionProcessor implements BeanDefinitionProcessor {
     }
 
     private void process(BeanDefinition definition, TypeElement element) {
-        for (Element member : element.getEnclosedElements()) {
+        for (Element member : Util.getEnclosedElementsWithParents(element)) {
             if (member.getKind() != ElementKind.METHOD) { continue; }
 
             ExecutableElement method = (ExecutableElement) member;

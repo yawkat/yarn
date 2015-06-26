@@ -24,7 +24,7 @@ public class InjectMembersBeanDefinitionProcessor implements BeanDefinitionProce
     public void process(Compiler compiler, BeanDefinition definition) {
         if (!(definition.getType().getKind() == TypeKind.DECLARED)) { return; }
         Element element = ((DeclaredType) definition.getType()).asElement();
-        for (Element member : element.getEnclosedElements()) {
+        for (Element member : Util.getEnclosedElementsWithParents((TypeElement) element)) {
             // check for @Inject
             if (member.getAnnotation(Inject.class) == null) { continue; }
             if (member.getModifiers().contains(Modifier.STATIC)) {

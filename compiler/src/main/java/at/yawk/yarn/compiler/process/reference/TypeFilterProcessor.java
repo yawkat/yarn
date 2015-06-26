@@ -57,7 +57,7 @@ public class TypeFilterProcessor implements LookupBeanReferenceProcessor {
     private static Optional<ExecutableElement> findFunctionalInterfaceMethod(TypeElement element) {
         if (element.getKind() != ElementKind.INTERFACE) { return null; }
         ExecutableElement match = null;
-        for (Element enclosed : element.getEnclosedElements()) {
+        for (Element enclosed : Util.getEnclosedElementsWithParents(element)) {
             if (enclosed.getKind() != ElementKind.METHOD) { continue; }
             Set<Modifier> modifiers = enclosed.getModifiers();
             if (!modifiers.contains(Modifier.ABSTRACT)) { continue; }
