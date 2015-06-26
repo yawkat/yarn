@@ -15,45 +15,6 @@ import javax.lang.model.util.AbstractElementVisitor8;
  * @author yawkat
  */
 public class Util {
-    public static <E> Iterable<E> filterByType(Iterable<?> iterable, Class<E> type) {
-        return () -> new Iterator<E>() {
-            private final Iterator<?> itr = iterable.iterator();
-            private E peekedItem = null;
-
-            @SuppressWarnings("unchecked")
-            private void peek() {
-                while (itr.hasNext()) {
-                    Object next = itr.next();
-                    if (type.isInstance(next)) {
-                        peekedItem = (E) next;
-                        break;
-                    }
-                }
-            }
-
-            @Override
-            public boolean hasNext() {
-                if (peekedItem == null) {
-                    peek();
-                }
-                return peekedItem != null;
-            }
-
-            @Override
-            public E next() {
-                if (peekedItem == null) {
-                    peek();
-                    if (peekedItem == null) {
-                        throw new NoSuchElementException();
-                    }
-                }
-                E next = this.peekedItem;
-                peekedItem = null;
-                return next;
-            }
-        };
-    }
-
     private static final List<Modifier> ACCESS_LADDER =
             Arrays.asList(Modifier.PUBLIC, Modifier.PROTECTED, Modifier.DEFAULT, Modifier.PRIVATE);
 
